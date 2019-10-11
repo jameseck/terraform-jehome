@@ -1,4 +1,6 @@
+libvirt_host  = "192.168.0.35"
 edgerouter_ip = "192.168.0.209"
+
 static_hosts_map = {
   "pi.iot.je.home" = {
     ip           = "192.168.4.10",

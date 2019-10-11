@@ -1,3 +1,8 @@
+variable "libvirt_host" {
+  description = "The ip or hostname for the KVM host"
+  type        = string
+}
+
 variable "static_hosts_map" {
   description = "A map of all hosts - applied to edgerouter for dhcp/dns"
   type        = map
