@@ -1,0 +1,24 @@
+---
+- name: Check variables
+  assert:
+    that:
+      - host_fqdn is defined
+      - host_ip | ipaddr
+      - host_mac is regex("^([a-fA-F0-9]{2}[:|\-]?){6}$")
+      - host_shared_network_name is defined
+      - host_subnet | ipsubnet
+
+- name: Set the static host and dhcp mapping
+  edgeos_config:
+    lines:
+    - set service dhcp-server shared-network-name {{ host_shared_network_name }} subnet {{ host_subnet }} static-mapping {{ host_fqdn }} ip-address {{ host_ip }}
+    - set service dhcp-server shared-network-name {{ host_shared_network_name }} subnet {{ host_subnet }} static-mapping {{ host_fqdn }} mac-address {{ host_mac }}
+    - set system static-host-mapping host-name {{ host_fqdn }} inet {{ host_ip }}
+  when: host_state is not defined or host_state != 'absent'
+
+- name: Delete the static host and dhcp mapping
+  edgeos_config:
+    lines:
+    - delete service dhcp-server shared-network-name {{ host_shared_network_name }} subnet {{ host_subnet }} static-mapping {{ host_fqdn }}
+    - delete system static-host-mapping host-name {{ host_fqdn }}
+  when: host_state is defined and host_state == 'absent'
