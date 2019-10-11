@@ -1,11 +1,6 @@
 [edgerouter]
-er.jehome.co.uk ansible_host=192.168.0.1 ansible_user=ubnt
+er.jehome.co.uk ansible_host=192.168.0.209 ansible_user=ubnt
 
 [all:vars]
 ansible_connection=network_cli
 ansible_network_os=edgeos
-host_fqdn = k8stesting.je.home
-host_ip_address = 192.168.0.12
-host_subnet = 192.168.0.0/24
-host_shared_network_name = WIRED
-host_mac_address = 00:01:02:03:04:05

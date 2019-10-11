@@ -8,11 +8,6 @@ variable "kvm_hosts_map" {
   type        = map
 }
 
-variable "shared_network_subnets" {
-  description = "A mapping of subnets to shared network names"
-  type        = map
-}
-
 variable "edgerouter_ip" {
   description = "The ip or hostname for the Edgerouter"
   type        = string
