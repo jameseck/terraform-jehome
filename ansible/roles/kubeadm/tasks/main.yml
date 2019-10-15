@@ -6,12 +6,12 @@
 #- name: dump out
 #  debug:
 #    var: kubeadm_out
-- name: Install python Pip
+- name: Install Python Pip
   package:
     name: python-pip
     state: present
 
-- name: upgrade pip
+- name: upgrade Pip
   pip:
     name: pip
     state: latest
@@ -62,16 +62,6 @@
     sysctl_file: /etc/sysctl.d/k8s.conf
     reload: yes
 
-#- name: k8s sysctl
-#  copy:
-#    src: sysctl_k8s.conf
-#    dest: /etc/sysctl.d/k8s.conf
-#  register: k8s_sysctl
-#
-#- name: Refresh sysctl
-#  command: sysctl --system
-#  when: k8s_sysctl.changed
-
 - name: k8s yum repo
   yum_repository:
     name: Kubernetes
@@ -105,6 +95,7 @@
 
 - name: Check k8s status
   command: kubectl  get componentstatuses
+  changed_when: False
   register: k8s_status
 
 - name: Run kubeadm to init k8s
@@ -143,13 +134,12 @@
   until: api_available_output.stdout == 'ok'
   retries: 120
   delay: 1
-  changed_when: false
-  run_once: true
+  changed_when: False
+  run_once: True
 
 - name: Get master taint status
-#  command: %{raw%} kubectl get nodes -o go-template='{{range $item := .items}}{{with $nodename := $item.metadata.name}}{{range $taint := $item.spec.taints}}{{if and (eq $taint.key "node-role.kubernetes.io/master") (eq $taint.effect "NoSchedule")}}{{printf "%s\n" $nodename}}{{end}}{{end}}{{end}}{{end}}'{%endraw%}
-#  command: kubectl get node -o json | jq '.items[].spec.taints'
   shell: kubectl get node -o json | jq '.items[] | select(.spec.taints != null) .spec.taints'
+  changed_when: False
   register: master_taints
 
 - name: taint master k8s nodes
@@ -162,6 +152,7 @@
   until: item in control_plane_pods_created.stdout
   retries: 10
   delay: 30
+  changed_when: False
   with_items:
     - etcd
     - kube-apiserver
@@ -170,94 +161,10 @@
 
 - name: Wait for control-plane pods become ready
   shell: "kubectl wait --namespace=kube-system --for=condition=Ready pods --selector tier=control-plane --timeout=600s"
+  changed_when: False
   register: control_plane_pods_ready
 
 - include_tasks: flannel.yml
 - include_tasks: helm.yml
 - include_tasks: flux.yml
 
-- name: Create ServiceAccount for Tiller client
-  k8s:
-    state: present
-    definition:
-      apiVersion: v1
-      kind: ServiceAccount
-      metadata:
-        name: tiller
-        namespace: kube-system
-    validate:
-      fail_on_error: yes
-      strict: yes
-
-
-#- name: Create tiller-cluster-role
-#  command: kubectl create clusterrolebinding tiller-cluster-role --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-
-- name: Create ClusterRoleBinding for Tiller Service Account
-  k8s:
-    state: present
-    definition:
-      apiVersion: rbac.authorization.k8s.io/v1
-      kind: ClusterRoleBinding
-      metadata:
-        name: tiller-cluster-role
-      roleRef:
-        apiGroup: rbac.authorization.k8s.io
-        kind: ClusterRole
-        name: cluster-admin
-      subjects:
-        - kind: ServiceAccount
-          name: tiller
-          namespace: kube-system
-    validate:
-      fail_on_error: yes
-      strict: yes
-
-- name: Helm init
-  command: helm init --upgrade --service-account tiller --history-max 10 --wait
-
-- name: Install Flux Helm CRD
-  command: kubectl apply -f https://raw.githubusercontent.com/fluxcd/flux/helm-0.10.1/deploy-helm/flux-helm-release-crd.yaml
-
-- name: Create Flux namespace
-  k8s:
-    name: flux
-    api_version: v1
-    kind: Namespace
-    state: present
-
-- name: Create Flux private ssh key secret
-  k8s:
-    state: present
-    definition:
-      apiVersion: v1
-      kind: Secret
-      metadata:
-        name: flux-git-auth
-        namespace: flux
-      stringData:
-        identity: >
-         {{ lookup('file', '{{ role_path }}/files/flux_ssh_key') }}
-      type: Opaque
-    validate:
-      fail_on_error: yes
-      strict: yes
-
-- name: Add flux helm repo
-  command: helm repo add fluxcd https://charts.fluxcd.io
-
-- name: Install Flux via Helm
-  shell: >
-    helm upgrade -i flux \
-      --set helmOperator.create=true \
-      --set helmOperator.createCRD=false \
-      --set git.user=jameseck \
-      --set git.email=jameseck@users.noreply.github.com \
-      --set git.url=git@github.com:jameseck/flux-get-started \
-      --set git.secretName=flux-git-auth \
-      --namespace flux \
-      --wait \
-      fluxcd/flux
-
-- name: Wait for Flux rollout
-  command: kubectl -n flux rollout status deployment/flux

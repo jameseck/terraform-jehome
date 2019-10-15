@@ -1,7 +1,7 @@
 ---
 - name: debug
   debug:
-    msg: "hosts_map is: {{ hosts_map | type_debug}}"
+    msg: "hosts_map is: {{ hosts_map | type_debug }}"
 
 - name: set hosts_map to dict if string
   set_fact:
