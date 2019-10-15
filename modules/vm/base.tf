@@ -53,8 +53,8 @@ write_files:
     owner: root:root
     path: /root/kubeadm.sh
     permissions: 0755
-runcmd:
-- /root/kubeadm.sh
+#runcmd:
+#- /root/kubeadm.sh
 growpart:
   mode: auto
   devices: ['/']
@@ -118,5 +118,26 @@ resource "libvirt_domain" "dom" {
     inline = [
       "cloud-init status --wait > /dev/null"
     ]
+  }
+}
+
+resource "null_resource" "ansible_kubeadm" {
+  for_each = var.hosts_map
+
+  connection {
+    host = libvirt_domain.dom[each.key].network_interface[0].addresses[0]
+    user = "root"
+  }
+
+  provisioner "ansible" {
+    plays {
+      verbose = true
+      playbook {
+        file_path      = "./ansible/kubeadm.yml"
+        roles_path     = ["./ansible/roles"]
+        force_handlers = false
+      }
+      hosts = [libvirt_domain.dom[each.key].network_interface[0].addresses[0]]
+    }
   }
 }

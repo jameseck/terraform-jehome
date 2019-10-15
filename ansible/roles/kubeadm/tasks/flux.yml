@@ -1,0 +1,6 @@
+---
+- name: Install fluxctl
+  get_url:
+    url: "https://github.com/fluxcd/flux/releases/download/{{ flux_version }}/fluxctl_linux_amd64"
+    dest: /usr/local/bin/fluxctl
+    mode: 0755

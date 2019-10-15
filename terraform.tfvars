@@ -86,6 +86,12 @@ static_hosts_map = {
     network_name = "WIRED",
     subnet       = "192.168.0.0/24",
   },
+  "picam.je.home" = {
+    ip           = "192.168.0.41",
+    mac          = "b8:27:eb:d8:e1:45",
+    network_name = "WIRED",
+    subnet       = "192.168.0.0/24",
+  },
   "plex.je.home" = {
     ip           = "192.168.0.20",
     mac          = "52:54:00:92:be:6c",
