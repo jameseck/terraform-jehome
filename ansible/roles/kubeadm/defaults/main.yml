@@ -9,3 +9,7 @@ flux_git_user: jameseck
 flux_git_email: jameseck@users.noreply.github.com
 flux_git_url: git@github.com:jameseck/flux-get-started
 flux_git_branch: master
+
+root_ca_issuer_name: selfsigning-issuer-for-root-ca2
+root_ca_certificate_name: "{{ ansible_fqdn | replace('.', '-') }}-root-ca2"
+root_ca_clusterissuer_name: "{{ ansible_fqdn | replace('.', '-') }}-ca-issuer2"

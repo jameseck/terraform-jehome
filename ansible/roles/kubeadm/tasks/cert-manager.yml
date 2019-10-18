@@ -1,0 +1,41 @@
+---
+- name: Create cert-manager namespace
+  k8s:
+    name: cert-manager
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Check if cert-manager CRD is installed
+  command: kubectl get crd certificates.cert-manager.io
+  changed_when: False
+  register: cert_manager_crd
+
+- name: Install cert-manager CRD
+  command: kubectl apply --validate=false -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.11/deploy/manifests/00-crds.yaml
+  when: cert_manager_crd.rc != 0
+
+- name: Check Jetstack repo
+  shell: helm repo list | grep fluxcd | awk '{print $1" "$2}'
+  changed_when: False
+  register: helm_repo_list
+
+- name: Add Jetstack Helm repo
+  command: helm repo add jetstack https://charts.jetstack.io
+  when: '"jetstack https://charts.jetstack.io" not in helm_repo_list.stdout_lines'
+
+- name: Check Helm releases
+  command: helm list -q
+  changed_when: False
+  register: helm_list_results
+
+- name: Update Helm repos
+  command: helm repo update
+
+- name: Install cert-manager via Helm
+  shell: >
+    helm upgrade -i cert-manager \
+      --namespace cert-manager \
+      --version v0.11.0 \
+      jetstack/cert-manager
+  when: "'cert-manager' not in helm_list_results.stdout_lines"

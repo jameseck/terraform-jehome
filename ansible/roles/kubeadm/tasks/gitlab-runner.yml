@@ -1,0 +1,10 @@
+---
+- name: Transform gitlab certificate secret for gitlab-runner
+  shell: >
+    GITLAB_CERT=$(kubectl -n gitlab get secret gitlab-k8stesting-je-home -o 'go-template={{ index .data "tls.crt"}}' | base64 -d)
+    CA_CERT=$(kubectl -n gitlab get secret gitlab-k8stesting-je-home -o 'go-template={{ index .data "ca.crt"}}' | base64 -d)
+    CERT_CHAIN="${GITLAB_CERT}
+    ${CA_CERT}"
+    kubectl -n gitlab delete secret gitlab-k8stesting-je-home2
+    kubectl -n gitlab create secret generic gitlab-k8stesting-je-home2 --from-literal=gitlab.k8stesting.je.home.crt="${CERT_CHAIN}"
+

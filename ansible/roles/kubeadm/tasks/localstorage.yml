@@ -1,0 +1,9 @@
+---
+- name: Create local-path-provisioner
+  command: kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml
+
+- name: Patch storageclass default
+  command: >
+    kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+# https://github.com/rancher/local-path-provisioner
+# kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml

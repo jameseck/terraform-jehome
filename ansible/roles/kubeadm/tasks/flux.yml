@@ -46,6 +46,9 @@
   command: helm repo add fluxcd https://charts.fluxcd.io
   when: '"fluxcd https://charts.fluxcd.io" not in helm_repo_list.stdout_lines'
 
+- name: Update Helm repos
+  command: helm repo update
+
 - name: Check Helm releases
   command: helm list -q
   changed_when: False

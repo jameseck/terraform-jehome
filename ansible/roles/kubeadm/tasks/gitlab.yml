@@ -1,0 +1,45 @@
+---
+- name: Create Gitlab namespace
+  k8s:
+    name: gitlab
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Create gitlab certificate
+  k8s:
+    state: present
+    definition:
+      apiVersion: cert-manager.io/v1alpha2
+      kind: Certificate
+      metadata:
+        name: "gitlab-{{ ansible_fqdn | replace('.', '-') }}"
+        namespace: gitlab
+      spec:
+        commonName: "gitlab-{{ ansible_fqdn | replace('.', '-') }}"
+        secretName: "gitlab-{{ ansible_fqdn | replace('.', '-') }}"
+        issuerRef:
+          kind: ClusterIssuer
+          name: "{{ root_ca_certificate_name }}"
+      dnsNames:
+      - "gitlab.{{ ansible_fqdn | replace('.', '-') }}"
+      - "minio.{{ ansible_fqdn | replace('.', '-') }}"
+      - "registry.{{ ansible_fqdn | replace('.', '-') }}"
+    wait: true
+    wait_condition:
+      reason: Ready
+      type: Ready
+      status: "True"
+    wait_timeout: 30
+
+- name: Check helm gitlab repo
+  shell: helm repo list | grep gitlab | awk '{print $1" "$2}'
+  changed_when: False
+  register: helm_repo_list
+
+- name: Add gitlab helm repo
+  command: helm repo add gitlab https://charts.gitlab.io
+  when: '"gitlab https://charts.gitlab.io" not in helm_repo_list.stdout_lines'
+
+- name: Update Helm repos
+  command: helm repo update
