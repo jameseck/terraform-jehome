@@ -13,3 +13,7 @@ variable "base_volume_pool" {
 variable "bridge_network" {
   type = string
 }
+
+variable "depends" {
+  type = list
+}

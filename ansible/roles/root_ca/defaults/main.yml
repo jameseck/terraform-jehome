@@ -1,15 +1,4 @@
 ---
-k8s_package_version: 1.15.4
-k8s_cluster_version: stable-1.15
-helm_version: v2.14.3
-flux_version: 1.15.0
-pod_network_cidr: 10.244.0.0/16
-flux_git_poll_interval: 5m
-flux_git_user: jameseck
-flux_git_email: jameseck@users.noreply.github.com
-flux_git_url: git@github.com:jameseck/flux-get-started
-flux_git_branch: master
-
 base_cluster_domain: "{{ ansible_fqdn }}"
 api_cluster_domain: "{{ base_cluster_domain }}"
 cluster_domain: "apps.{{ base_cluster_domain }}"

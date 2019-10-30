@@ -21,8 +21,8 @@ module "vm" {
 
   base_volume_id   = libvirt_volume.centos-base-qcow2.id
   base_volume_pool = "base"
+  bridge_network   = libvirt_network.bridge.bridge
+  hosts_map        = var.kvm_hosts_map
 
-  bridge_network = libvirt_network.bridge.bridge
-
-  hosts_map = var.kvm_hosts_map
+  depends = [null_resource.edgerouter_ansible.id]
 }

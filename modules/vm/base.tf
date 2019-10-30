@@ -41,20 +41,18 @@ packages:
 - wget
 chpasswd:
   list: |
-     root:tf
+     root:$y$j9T$LIvfpb.PVsWX8T12eYeLY.$R7KXnEXJ.AO8G0wYMcanD.dPls1ZuWOD4UfgcVpUxOC
   expire: False
 users:
   - name: root
     ssh-authorized-keys:
       - ${file("id_rsa.pub")}
-write_files:
-  - encoding: b64
-    content: ${base64encode(file("${path.module}/kubeadm.sh"))}
-    owner: root:root
-    path: /root/kubeadm.sh
-    permissions: 0755
-#runcmd:
-#- /root/kubeadm.sh
+#write_files:
+#  - encoding: b64
+#    content: ${base64encode(file("${path.module}/kubeadm.sh"))}
+#    owner: root:root
+#    path: /root/kubeadm.sh
+#    permissions: 0755
 growpart:
   mode: auto
   devices: ['/']
@@ -121,23 +119,31 @@ resource "libvirt_domain" "dom" {
   }
 }
 
-resource "null_resource" "ansible_kubeadm" {
+resource "null_resource" "dom_ansible" {
   for_each = var.hosts_map
 
   connection {
-    host = libvirt_domain.dom[each.key].network_interface[0].addresses[0]
-    user = "root"
+    host    = libvirt_domain.dom[each.key].network_interface[0].addresses[0]
+    user    = "root"
+    timeout = "60m"
   }
 
   provisioner "ansible" {
     plays {
       verbose = true
       playbook {
-        file_path      = "./ansible/kubeadm.yml"
+        file_path      = "./ansible/${each.value.ansible_playbook}"
         roles_path     = ["./ansible/roles"]
         force_handlers = false
       }
       hosts = [libvirt_domain.dom[each.key].network_interface[0].addresses[0]]
+      extra_vars = {
+        hosts_map          = jsonencode(var.hosts_map),
+        ansible_extra_vars = jsonencode(each.value.ansible_extra_vars),
+      }
     }
+  }
+  triggers = {
+    hostvar = each.key
   }
 }
